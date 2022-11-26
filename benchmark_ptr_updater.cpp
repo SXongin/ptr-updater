@@ -17,3 +17,11 @@ static void BM_LockFreeData(benchmark::State& state) {
   }
 }
 BENCHMARK(BM_LockFreeData);
+
+
+static void BM_SharedData(benchmark::State& state) {
+  for (auto _ : state) {
+    UseData<SharedData>(kTimes);
+  }
+}
+BENCHMARK(BM_SharedData);

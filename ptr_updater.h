@@ -7,14 +7,14 @@
 #include <mutex>
 
 struct LockData {
-  void Destory() {
+  void Destroy() {
     std::lock_guard<std::mutex> m{data_mutex_};
     delete data_;
     data_ = nullptr;
   }
 
   void Change(std::size_t const n) {
-    Destory();
+    Destroy();
     std::lock_guard<std::mutex> m{data_mutex_};
     data_ = std::make_unique<int>(n).release();
   }
@@ -33,7 +33,7 @@ struct LockData {
 
 constexpr std::uint64_t kOccupiedFlag = ~(static_cast<std::uint64_t>(-1) >> 1);
 struct LockFreeData {
-  void Destory() {
+  void Destroy() {
     std::uint64_t ptr_num;
     ptr_num = data_.load(std::memory_order_acquire);
     while (!data_.compare_exchange_weak(ptr_num, static_cast<std::uint64_t>(0), std::memory_order_release)) {
@@ -45,7 +45,7 @@ struct LockFreeData {
   }
 
   void Change(std::size_t const n) {
-    Destory();
+    Destroy();
     data_.store(reinterpret_cast<std::uint64_t>(std::make_unique<int>(n).release()), std::memory_order_release);
   }
 
@@ -71,6 +71,25 @@ struct LockFreeData {
   std::atomic<std::uint64_t> data_{};
 };
 
+struct SharedData {
+  void Destroy() {
+    // donothing
+  }
+
+  void Change(std::size_t i) {
+    std::atomic_store_explicit(&data_, std::make_shared<int>(i), std::memory_order_release);
+  }
+
+  void Use() {
+    std::shared_ptr<int> tmp = std::atomic_load_explicit(&data_, std::memory_order_acquire);
+    if (tmp) {
+      ++(*tmp);
+    }
+  }
+
+  std::shared_ptr<int> data_{};
+};
+
 template<typename T>
 void UseData(std::size_t const times) {
   T d;
@@ -83,5 +102,5 @@ void UseData(std::size_t const times) {
     d.Use();
   }
   c.join();
-  d.Destory();
+  d.Destroy();
 }

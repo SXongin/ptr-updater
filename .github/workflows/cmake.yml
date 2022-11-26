@@ -39,3 +39,11 @@ jobs:
       working-directory: ${{github.workspace}}/build
       run: ./benchmakr_ptr_updater
 
+    - name: Helgrind
+      working-directory: ${{github.workspace}}/build
+      run: valgrind -s --tool=helgrind ./main
+
+    - name: Valgrind-LeakCheck
+      working-directory: ${{github.workspace}}/build
+      run: valgrind --leak-check=full ./main
+
